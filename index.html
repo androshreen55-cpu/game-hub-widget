@@ -17,21 +17,11 @@ LOADING...
 </div>
 
 <script>
-<div id="test"></div><script>
-document.getElementById("test").innerHTML = "JS WORKS";
-</script>
-
 <script>
-window.onload = function() {
-
-    document.getElementById("test").innerHTML = "PRESS ANY KEY";
-
-    window.addEventListener("keydown", function(e) {
-        document.getElementById("test").innerHTML =
-            "KEY: " + e.key + "<br><br>CODE: " + e.keyCode;
-    });
-
-};
+document.addEventListener("keydown", function(e) {
+    document.getElementById("test").innerHTML = "BUTTON PRESSED";
+});
+</script>
 </script>
 
 </body>
