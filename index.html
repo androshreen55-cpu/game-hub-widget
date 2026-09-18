@@ -17,9 +17,23 @@ LOADING...
 </div>
 
 <script>
+<div id="test"></div>
+
+<script>
 window.onload = function() {
-    document.getElementById("test").innerHTML = "JAVASCRIPT OK";
+
+    document.getElementById("test").innerHTML = "PRESS ANY KEY";
+
+    window.addEventListener("keydown", function(e) {
+        document.getElementById("test").innerHTML =
+            "KEY: " + e.key + "<br><br>CODE: " + e.keyCode;
+    });
+
 };
+</script>
+
+</body>
+</html>
 </script>
 
 </body>
