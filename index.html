@@ -14,62 +14,118 @@ GAME HUB
 
 <div id="menu" style="margin:25px 15px 0;font-size:18px;line-height:42px;"></div>
 
-<div style="position:absolute;bottom:8px;width:240px;text-align:center;font-size:11px;">
+<div id="help" style="position:absolute;bottom:8px;width:240px;text-align:center;font-size:11px;">
 ↑ ↓ Move &nbsp; OK Select
 </div>
 
 <script>
-var items = ["GAMES", "WEB APPS", "TOOLS", "SETTINGS"];
+var page = "main";
 var selected = 0;
 
-function drawMenu() {
+var mainItems = ["GAMES", "WEB APPS", "TOOLS", "SETTINGS"];
+var gameItems = ["SNAKE", "TETRIS", "2048", "BACK"];
+
+function draw() {
+
     var menu = document.getElementById("menu");
+    var help = document.getElementById("help");
+    var items;
+
+    if (page == "main") {
+        items = mainItems;
+    } else {
+        items = gameItems;
+    }
+
     var html = "";
 
     for (var i = 0; i < items.length; i++) {
 
         if (i == selected) {
-            html += "<div style='background:white;color:black;'>&gt; " + items[i] + "</div>";
+            html += "<div style='background:white;color:black;'>&gt; "
+                 + items[i] + "</div>";
         } else {
-            html += "<div>&nbsp;&nbsp; " + items[i] + "</div>";
+            html += "<div>&nbsp;&nbsp; "
+                 + items[i] + "</div>";
         }
     }
 
     menu.innerHTML = html;
+
+    if (page == "main") {
+        help.innerHTML = "↑ ↓ Move &nbsp; OK Select";
+    } else {
+        help.innerHTML = "↑ ↓ Move &nbsp; OK Open &nbsp; BACK";
+    }
 }
 
 document.addEventListener("keydown", function(e) {
 
+    var items;
+
+    if (page == "main") {
+        items = mainItems;
+    } else {
+        items = gameItems;
+    }
+
     if (e.key == "ArrowDown") {
+
         selected++;
 
         if (selected >= items.length) {
             selected = 0;
         }
 
-        drawMenu();
+        draw();
     }
 
     if (e.key == "ArrowUp") {
+
         selected--;
 
         if (selected < 0) {
             selected = items.length - 1;
         }
 
-        drawMenu();
+        draw();
     }
 
     if (e.key == "Enter") {
-        document.getElementById("menu").innerHTML =
-            "<div style='text-align:center;margin-top:40px;'>" +
-            items[selected] +
-            "<br><br>COMING SOON" +
-            "</div>";
+
+        if (page == "main" && selected == 0) {
+
+            page = "games";
+            selected = 0;
+            draw();
+
+        } else if (page == "games" && selected == 3) {
+
+            page = "main";
+            selected = 0;
+            draw();
+
+        } else if (page == "games") {
+
+            document.getElementById("menu").innerHTML =
+                "<div style='text-align:center;margin-top:40px;'>" +
+                items[selected] +
+                "<br><br>COMING SOON</div>";
+        }
     }
+
+    if (e.key == "Escape" || e.key == "Backspace") {
+
+        if (page == "games") {
+            page = "main";
+            selected = 0;
+            draw();
+        }
+    }
+
 });
 
-drawMenu();
+draw();
 </script>
 
 </body>
