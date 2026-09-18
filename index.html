@@ -3,23 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=240,height=320">
-<title>Button Test</title>
+<title>Game Hub</title>
 </head>
 
-<body style="margin:0;background:black;color:white;width:240px;height:320px;font-family:Arial;text-align:center;">
+<body style="margin:0;background:black;color:white;width:240px;height:320px;font-family:Arial;overflow:hidden;">
 
-<div style="padding-top:30px;font-size:24px;">
-BUTTON TEST
+<div style="text-align:center;padding-top:25px;font-size:24px;font-weight:bold;">
+GAME HUB
 </div>
 
-<div id="test" style="margin-top:50px;font-size:20px;">
-PRESS ANY KEY
+<div id="menu" style="margin:25px 15px 0;font-size:18px;line-height:42px;"></div>
+
+<div style="position:absolute;bottom:8px;width:240px;text-align:center;font-size:11px;">
+↑ ↓ Move &nbsp; OK Select
 </div>
 
 <script>
+var items = ["GAMES", "WEB APPS", "TOOLS", "SETTINGS"];
+var selected = 0;
+
+function drawMenu() {
+    var menu = document.getElementById("menu");
+    var html = "";
+
+    for (var i = 0; i < items.length; i++) {
+
+        if (i == selected) {
+            html += "<div style='background:white;color:black;'>&gt; " + items[i] + "</div>";
+        } else {
+            html += "<div>&nbsp;&nbsp; " + items[i] + "</div>";
+        }
+    }
+
+    menu.innerHTML = html;
+}
+
 document.addEventListener("keydown", function(e) {
-    document.getElementById("test").innerHTML = "BUTTON PRESSED";
+
+    if (e.key == "ArrowDown") {
+        selected++;
+
+        if (selected >= items.length) {
+            selected = 0;
+        }
+
+        drawMenu();
+    }
+
+    if (e.key == "ArrowUp") {
+        selected--;
+
+        if (selected < 0) {
+            selected = items.length - 1;
+        }
+
+        drawMenu();
+    }
+
+    if (e.key == "Enter") {
+        document.getElementById("menu").innerHTML =
+            "<div style='text-align:center;margin-top:40px;'>" +
+            items[selected] +
+            "<br><br>COMING SOON" +
+            "</div>";
+    }
 });
+
+drawMenu();
 </script>
 
 </body>
