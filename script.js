@@ -1,107 +1,46 @@
-var menuItems = ["GAMES", "WEB APPS", "TOOLS", "SETTINGS"];
-var selected = 0;
-var page = "main";
+<script>
+window.onload = function() {
 
-function draw() {
-    var menu = document.getElementById("menu");
-    var html = "";
+    var selected = 0;
+    var names = ["GAMES", "WEB APPS", "TOOLS", "SETTINGS"];
 
-    if (page == "main") {
+    function draw() {
+        var text = "";
 
-        for (var i = 0; i < menuItems.length; i++) {
+        for (var i = 0; i < names.length; i++) {
             if (i == selected) {
-                html += "<div style='background:white;color:black;padding-left:5px;'>";
-                html += "> " + menuItems[i];
-                html += "</div>";
+                text += "<div style='background:white;color:black;height:42px;line-height:42px;'>&gt; " + names[i] + "</div>";
             } else {
-                html += "<div>> " + menuItems[i] + "</div>";
+                text += "<div style='height:42px;line-height:42px;'>&nbsp;&nbsp; " + names[i] + "</div>";
             }
         }
 
-    } else if (page == "games") {
-
-        var games = ["TETRIS", "SNAKE", "2048", "BACK"];
-
-        for (var i = 0; i < games.length; i++) {
-            if (i == selected) {
-                html += "<div style='background:white;color:black;padding-left:5px;'>";
-                html += "> " + games[i];
-                html += "</div>";
-            } else {
-                html += "<div>> " + games[i] + "</div>";
-            }
-        }
-
-    } else {
-
-        html = "<div style='text-align:center;margin-top:40px;'>";
-        html += "<b>COMING SOON</b><br><br>";
-        html += "This section is<br>under development.";
-        html += "</div>";
+        document.getElementById("test").innerHTML = text;
     }
 
-    menu.innerHTML = html;
-}
+    document.addEventListener("keydown", function(e) {
 
-document.addEventListener("keydown", function(e) {
+        if (e.key == "ArrowDown") {
+            selected++;
 
-    if (e.key == "ArrowDown") {
-        selected++;
-
-        if (page == "main" && selected >= menuItems.length) {
-            selected = 0;
-        }
-
-        if (page == "games" && selected >= 4) {
-            selected = 0;
-        }
-
-        draw();
-    }
-
-    if (e.key == "ArrowUp") {
-        selected--;
-
-        if (selected < 0) {
-            if (page == "main") {
-                selected = menuItems.length - 1;
-            } else {
-                selected = 3;
-            }
-        }
-
-        draw();
-    }
-
-    if (e.key == "Enter") {
-
-        if (page == "main") {
-
-            if (selected == 0) {
-                page = "games";
+            if (selected >= names.length) {
                 selected = 0;
-            } else {
-                page = "other";
             }
 
-        } else if (page == "games") {
-
-            if (selected == 3) {
-                page = "main";
-                selected = 0;
-            } else {
-                page = "other";
-            }
+            draw();
         }
 
-        draw();
-    }
+        if (e.key == "ArrowUp") {
+            selected--;
 
-    if (e.key == "Escape" || e.key == "Backspace") {
-        page = "main";
-        selected = 0;
-        draw();
-    }
-});
+            if (selected < 0) {
+                selected = names.length - 1;
+            }
 
-draw();
+            draw();
+        }
+    });
+
+    draw();
+};
+</script>
