@@ -3,129 +3,196 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=240,height=320">
-<title>Game Hub</title>
+<title>Snake</title>
 </head>
 
-<body style="margin:0;background:black;color:white;width:240px;height:320px;font-family:Arial;overflow:hidden;">
+<body style="
+margin:0;
+background:black;
+color:white;
+width:240px;
+height:320px;
+font-family:Arial;
+overflow:hidden;
+">
 
-<div style="text-align:center;padding-top:25px;font-size:24px;font-weight:bold;">
-GAME HUB
+<div style="text-align:center;padding-top:12px;font-size:20px;font-weight:bold;">
+SNAKE
 </div>
 
-<div id="menu" style="margin:25px 15px 0;font-size:18px;line-height:42px;"></div>
+<div id="score" style="text-align:center;font-size:12px;margin-top:4px;">
+SCORE: 0
+</div>
 
-<div id="help" style="position:absolute;bottom:8px;width:240px;text-align:center;font-size:11px;">
-↑ ↓ Move &nbsp; OK Select
+<canvas id="game"
+width="220"
+height="240"
+style="display:block;margin:10px auto;border:1px solid white;">
+</canvas>
+
+<div id="status" style="text-align:center;font-size:12px;">
+PRESS OK TO START
 </div>
 
 <script>
-var page = "main";
-var selected = 0;
 
-var mainItems = ["GAMES", "WEB APPS", "TOOLS", "SETTINGS"];
-var gameItems = ["SNAKE", "TETRIS", "2048", "BACK"];
+var canvas = document.getElementById("game");
+var ctx = canvas.getContext("2d");
+
+var snake;
+var food;
+var direction;
+var running = false;
+var score = 0;
+var timer;
+
+function startGame() {
+
+    snake = [
+        {x:100,y:100},
+        {x:90,y:100},
+        {x:80,y:100}
+    ];
+
+    food = {
+        x:140,
+        y:100
+    };
+
+    direction = "RIGHT";
+    score = 0;
+    running = true;
+
+    document.getElementById("score").innerHTML = "SCORE: 0";
+    document.getElementById("status").innerHTML = "USE ARROWS";
+
+    clearInterval(timer);
+    timer = setInterval(gameLoop, 180);
+}
+
+function gameLoop() {
+
+    var head = {
+        x:snake[0].x,
+        y:snake[0].y
+    };
+
+    if (direction == "UP") {
+        head.y -= 10;
+    }
+
+    if (direction == "DOWN") {
+        head.y += 10;
+    }
+
+    if (direction == "LEFT") {
+        head.x -= 10;
+    }
+
+    if (direction == "RIGHT") {
+        head.x += 10;
+    }
+
+    if (
+        head.x < 0 ||
+        head.x >= 220 ||
+        head.y < 0 ||
+        head.y >= 240
+    ) {
+        gameOver();
+        return;
+    }
+
+    snake.unshift(head);
+
+    if (
+        head.x == food.x &&
+        head.y == food.y
+    ) {
+
+        score++;
+
+        document.getElementById("score").innerHTML =
+            "SCORE: " + score;
+
+        food.x = Math.floor(Math.random() * 22) * 10;
+        food.y = Math.floor(Math.random() * 24) * 10;
+
+    } else {
+        snake.pop();
+    }
+
+    draw();
+}
 
 function draw() {
 
-    var menu = document.getElementById("menu");
-    var help = document.getElementById("help");
-    var items;
+    ctx.fillStyle = "black";
+    ctx.fillRect(0,0,220,240);
 
-    if (page == "main") {
-        items = mainItems;
-    } else {
-        items = gameItems;
+    ctx.fillStyle = "white";
+
+    for (var i = 0; i < snake.length; i++) {
+        ctx.fillRect(
+            snake[i].x,
+            snake[i].y,
+            10,
+            10
+        );
     }
 
-    var html = "";
+    ctx.fillRect(
+        food.x,
+        food.y,
+        10,
+        10
+    );
+}
 
-    for (var i = 0; i < items.length; i++) {
+function gameOver() {
 
-        if (i == selected) {
-            html += "<div style='background:white;color:black;'>&gt; "
-                 + items[i] + "</div>";
-        } else {
-            html += "<div>&nbsp;&nbsp; "
-                 + items[i] + "</div>";
-        }
-    }
+    running = false;
+    clearInterval(timer);
 
-    menu.innerHTML = html;
-
-    if (page == "main") {
-        help.innerHTML = "↑ ↓ Move &nbsp; OK Select";
-    } else {
-        help.innerHTML = "↑ ↓ Move &nbsp; OK Open &nbsp; BACK";
-    }
+    document.getElementById("status").innerHTML =
+        "GAME OVER - PRESS OK";
 }
 
 document.addEventListener("keydown", function(e) {
 
-    var items;
-
-    if (page == "main") {
-        items = mainItems;
-    } else {
-        items = gameItems;
-    }
-
-    if (e.key == "ArrowDown") {
-
-        selected++;
-
-        if (selected >= items.length) {
-            selected = 0;
-        }
-
-        draw();
-    }
-
-    if (e.key == "ArrowUp") {
-
-        selected--;
-
-        if (selected < 0) {
-            selected = items.length - 1;
-        }
-
-        draw();
-    }
-
     if (e.key == "Enter") {
 
-        if (page == "main" && selected == 0) {
-
-            page = "games";
-            selected = 0;
-            draw();
-
-        } else if (page == "games" && selected == 3) {
-
-            page = "main";
-            selected = 0;
-            draw();
-
-        } else if (page == "games") {
-
-            document.getElementById("menu").innerHTML =
-                "<div style='text-align:center;margin-top:40px;'>" +
-                items[selected] +
-                "<br><br>COMING SOON</div>";
+        if (!running) {
+            startGame();
         }
+
+        return;
     }
 
-    if (e.key == "Escape" || e.key == "Backspace") {
+    if (!running) {
+        return;
+    }
 
-        if (page == "games") {
-            page = "main";
-            selected = 0;
-            draw();
-        }
+    if (e.key == "ArrowUp" && direction != "DOWN") {
+        direction = "UP";
+    }
+
+    if (e.key == "ArrowDown" && direction != "UP") {
+        direction = "DOWN";
+    }
+
+    if (e.key == "ArrowLeft" && direction != "RIGHT") {
+        direction = "LEFT";
+    }
+
+    if (e.key == "ArrowRight" && direction != "LEFT") {
+        direction = "RIGHT";
     }
 
 });
 
 draw();
+
 </script>
 
 </body>
