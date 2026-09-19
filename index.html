@@ -3,200 +3,173 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=240,height=320">
-<title>Game Hub</title>
+<title>Tetris</title>
 </head>
 
-<body style="
-margin:0;
-background:black;
-color:white;
-width:240px;
-height:320px;
-font-family:Arial;
-overflow:hidden;
-">
+<body style="margin:0;background:black;color:white;width:240px;height:320px;font-family:Arial;overflow:hidden;">
 
-<div id="title" style="
-text-align:center;
-padding-top:8px;
-font-size:20px;
-font-weight:bold;
-">
-SNAKE
+<div style="text-align:center;padding-top:7px;font-size:20px;font-weight:bold;">
+TETRIS
 </div>
 
-<div id="score" style="
-text-align:center;
-font-size:11px;
-margin-top:2px;
-">
+<div id="score" style="text-align:center;font-size:11px;margin-top:2px;">
 SCORE: 0 &nbsp; BEST: 0
 </div>
 
-<canvas id="game"
-width="220"
-height="240"
-style="
-display:block;
-margin:7px auto;
+<div id="board" style="
+width:200px;
+height:200px;
+margin:6px auto;
 border:1px solid white;
+background:black;
+position:relative;
 ">
-</canvas>
+</div>
 
-<div id="status" style="
-text-align:center;
-font-size:11px;
-">
+<div id="status" style="text-align:center;font-size:11px;">
 PRESS OK TO START
 </div>
 
 <script>
 
-var canvas = document.getElementById("game");
-var ctx = canvas.getContext("2d");
+var board = document.getElementById("board");
 
-var snake = [];
-var food = {};
-var direction = "RIGHT";
-var nextDirection = "RIGHT";
+var rows = 20;
+var cols = 10;
+var cell = 20;
+
+var grid = [];
+var piece = null;
 
 var running = false;
 var score = 0;
 var best = 0;
-var speed = 180;
 var timer = null;
+var speed = 500;
 
-var cell = 10;
-var width = 22;
-var height = 24;
+var shapes = [
+    [[1,1,1,1]],
 
+    [[1,1],
+     [1,1]],
 
-/* START */
+    [[0,1,0],
+     [1,1,1]],
 
-function startGame() {
+    [[1,0,0],
+     [1,1,1]],
 
-    snake = [
-        {x:100,y:100},
-        {x:90,y:100},
-        {x:80,y:100}
-    ];
+    [[0,0,1],
+     [1,1,1]],
 
-    direction = "RIGHT";
-    nextDirection = "RIGHT";
+    [[0,1,1],
+     [1,1,0]],
 
-    score = 0;
-    speed = 180;
-    running = true;
+    [[1,1,0],
+     [0,1,1]]
+];
 
-    createFood();
+function resetGrid() {
+    grid = [];
 
-    updateScore();
+    for (var y = 0; y < rows; y++) {
+        grid[y] = [];
 
-    document.getElementById("status").innerHTML =
-        "USE ARROWS   BACK EXIT";
-
-    clearInterval(timer);
-
-    timer = setInterval(gameLoop, speed);
-
-    draw();
+        for (var x = 0; x < cols; x++) {
+            grid[y][x] = 0;
+        }
+    }
 }
 
+function newPiece() {
 
-/* FOOD */
+    var s = shapes[
+        Math.floor(Math.random() * shapes.length)
+    ];
 
-function createFood() {
+    piece = {
+        shape: s,
+        x: Math.floor((cols - s[0].length) / 2),
+        y: 0
+    };
 
-    var valid = false;
+    if (collision(piece.shape, piece.x, piece.y)) {
+        gameOver();
+    }
+}
 
-    while (!valid) {
+function collision(shape, px, py) {
 
-        food.x = Math.floor(Math.random() * width) * cell;
-        food.y = Math.floor(Math.random() * height) * cell;
+    for (var y = 0; y < shape.length; y++) {
+        for (var x = 0; x < shape[y].length; x++) {
 
-        valid = true;
+            if (!shape[y][x]) {
+                continue;
+            }
 
-        for (var i = 0; i < snake.length; i++) {
+            var nx = px + x;
+            var ny = py + y;
 
-            if (
-                snake[i].x == food.x &&
-                snake[i].y == food.y
-            ) {
-                valid = false;
-                break;
+            if (nx < 0 || nx >= cols || ny >= rows) {
+                return true;
+            }
+
+            if (ny >= 0 && grid[ny][nx]) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+function merge() {
+
+    for (var y = 0; y < piece.shape.length; y++) {
+        for (var x = 0; x < piece.shape[y].length; x++) {
+
+            if (piece.shape[y][x]) {
+                grid[piece.y + y][piece.x + x] = 1;
             }
         }
     }
 }
 
+function clearLines() {
 
-/* GAME LOOP */
+    var lines = 0;
 
-function gameLoop() {
+    for (var y = rows - 1; y >= 0; y--) {
 
-    direction = nextDirection;
+        var full = true;
 
-    var head = {
-        x: snake[0].x,
-        y: snake[0].y
-    };
+        for (var x = 0; x < cols; x++) {
+            if (!grid[y][x]) {
+                full = false;
+                break;
+            }
+        }
 
+        if (full) {
 
-    if (direction == "UP") {
-        head.y -= cell;
-    }
+            grid.splice(y, 1);
 
-    if (direction == "DOWN") {
-        head.y += cell;
-    }
+            var newRow = [];
 
-    if (direction == "LEFT") {
-        head.x -= cell;
-    }
+            for (var i = 0; i < cols; i++) {
+                newRow[i] = 0;
+            }
 
-    if (direction == "RIGHT") {
-        head.x += cell;
-    }
+            grid.unshift(newRow);
 
-
-    /* WALL */
-
-    if (
-        head.x < 0 ||
-        head.x >= canvas.width ||
-        head.y < 0 ||
-        head.y >= canvas.height
-    ) {
-        gameOver();
-        return;
-    }
-
-
-    /* BODY */
-
-    for (var i = 0; i < snake.length; i++) {
-
-        if (
-            head.x == snake[i].x &&
-            head.y == snake[i].y
-        ) {
-            gameOver();
-            return;
+            lines++;
+            y++;
         }
     }
 
+    if (lines > 0) {
 
-    snake.unshift(head);
-
-
-    /* EAT */
-
-    if (
-        head.x == food.x &&
-        head.y == food.y
-    ) {
-
-        score++;
+        score += lines * 10;
 
         if (score > best) {
             best = score;
@@ -204,117 +177,155 @@ function gameLoop() {
 
         updateScore();
 
-        createFood();
-
-        /* SPEED UP */
-
-        if (speed > 70) {
-            speed -= 8;
+        if (speed > 120) {
+            speed -= lines * 20;
 
             clearInterval(timer);
             timer = setInterval(gameLoop, speed);
         }
+    }
+}
+
+function rotate() {
+
+    var old = piece.shape;
+
+    var h = old.length;
+    var w = old[0].length;
+
+    var rotated = [];
+
+    for (var x = 0; x < w; x++) {
+
+        rotated[x] = [];
+
+        for (var y = h - 1; y >= 0; y--) {
+            rotated[x].push(old[y][x]);
+        }
+    }
+
+    if (!collision(rotated, piece.x, piece.y)) {
+        piece.shape = rotated;
+    }
+}
+
+function moveLeft() {
+
+    if (!collision(
+        piece.shape,
+        piece.x - 1,
+        piece.y
+    )) {
+        piece.x--;
+    }
+}
+
+function moveRight() {
+
+    if (!collision(
+        piece.shape,
+        piece.x + 1,
+        piece.y
+    )) {
+        piece.x++;
+    }
+}
+
+function moveDown() {
+
+    if (!collision(
+        piece.shape,
+        piece.x,
+        piece.y + 1
+    )) {
+
+        piece.y++;
 
     } else {
 
-        snake.pop();
-
+        merge();
+        clearLines();
+        newPiece();
     }
-
-    draw();
 }
-
-
-/* DRAW */
 
 function draw() {
 
-    ctx.fillStyle = "black";
-    ctx.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+    var html = "";
 
+    for (var y = 0; y < rows; y++) {
 
-    /* GRID */
+        for (var x = 0; x < cols; x++) {
 
-    ctx.strokeStyle = "#111";
+            var filled = grid[y][x];
 
-    for (var x = 0; x <= canvas.width; x += cell) {
+            if (piece) {
 
-        ctx.beginPath();
-        ctx.moveTo(x,0);
-        ctx.lineTo(x,canvas.height);
-        ctx.stroke();
+                for (var py = 0; py < piece.shape.length; py++) {
+                    for (var px = 0; px < piece.shape[py].length; px++) {
 
+                        if (
+                            piece.shape[py][px] &&
+                            piece.x + px == x &&
+                            piece.y + py == y
+                        ) {
+                            filled = 1;
+                        }
+                    }
+                }
+            }
+
+            if (filled) {
+
+                html +=
+                    "<div style='" +
+                    "position:absolute;" +
+                    "left:" + (x * cell) + "px;" +
+                    "top:" + (y * cell) + "px;" +
+                    "width:18px;" +
+                    "height:18px;" +
+                    "background:white;" +
+                    "'></div>";
+
+            }
+        }
     }
 
-    for (var y = 0; y <= canvas.height; y += cell) {
-
-        ctx.beginPath();
-        ctx.moveTo(0,y);
-        ctx.lineTo(canvas.width,y);
-        ctx.stroke();
-
-    }
-
-
-    /* SNAKE */
-
-    ctx.fillStyle = "white";
-
-    for (var i = 0; i < snake.length; i++) {
-
-        ctx.fillRect(
-            snake[i].x + 1,
-            snake[i].y + 1,
-            cell - 2,
-            cell - 2
-        );
-    }
-
-
-    /* HEAD */
-
-    if (snake.length > 0) {
-
-        ctx.fillStyle = "#aaa";
-
-        ctx.fillRect(
-            snake[0].x + 1,
-            snake[0].y + 1,
-            cell - 2,
-            cell - 2
-        );
-    }
-
-
-    /* FOOD */
-
-    ctx.fillStyle = "white";
-
-    ctx.fillRect(
-        food.x + 2,
-        food.y + 2,
-        cell - 4,
-        cell - 4
-    );
+    board.innerHTML = html;
 }
 
+function gameLoop() {
 
-/* SCORE */
+    if (!running) {
+        return;
+    }
 
-function updateScore() {
-
-    document.getElementById("score").innerHTML =
-        "SCORE: " + score +
-        " &nbsp; BEST: " + best;
+    moveDown();
+    draw();
 }
 
+function startGame() {
 
-/* GAME OVER */
+    clearInterval(timer);
+
+    resetGrid();
+
+    score = 0;
+    speed = 500;
+
+    running = true;
+
+    updateScore();
+
+    document.getElementById("status").innerHTML =
+        "← → MOVE  ↑ ROTATE  ↓ DROP";
+
+    newPiece();
+
+    draw();
+
+    timer = setInterval(gameLoop, speed);
+}
 
 function gameOver() {
 
@@ -326,13 +337,14 @@ function gameOver() {
         "GAME OVER &nbsp; OK=RESTART";
 }
 
+function updateScore() {
 
-/* KEYBOARD */
+    document.getElementById("score").innerHTML =
+        "SCORE: " + score +
+        " &nbsp; BEST: " + best;
+}
 
 document.addEventListener("keydown", function(e) {
-
-
-    /* OK */
 
     if (e.key == "Enter") {
 
@@ -343,68 +355,32 @@ document.addEventListener("keydown", function(e) {
         return;
     }
 
-
-    /* UP */
-
-    if (
-        e.key == "ArrowUp" &&
-        direction != "DOWN"
-    ) {
-        nextDirection = "UP";
+    if (!running) {
+        return;
     }
 
-
-    /* DOWN */
-
-    if (
-        e.key == "ArrowDown" &&
-        direction != "UP"
-    ) {
-        nextDirection = "DOWN";
+    if (e.key == "ArrowLeft") {
+        moveLeft();
+        draw();
     }
 
-
-    /* LEFT */
-
-    if (
-        e.key == "ArrowLeft" &&
-        direction != "RIGHT"
-    ) {
-        nextDirection = "LEFT";
+    if (e.key == "ArrowRight") {
+        moveRight();
+        draw();
     }
 
-
-    /* RIGHT */
-
-    if (
-        e.key == "ArrowRight" &&
-        direction != "LEFT"
-    ) {
-        nextDirection = "RIGHT";
+    if (e.key == "ArrowDown") {
+        moveDown();
+        draw();
     }
 
-
-    /* BACK */
-
-    if (
-        e.key == "Escape" ||
-        e.key == "Backspace"
-    ) {
-
-        clearInterval(timer);
-
-        running = false;
-
-        document.getElementById("status").innerHTML =
-            "EXITED - PRESS OK";
-
+    if (e.key == "ArrowUp") {
+        rotate();
+        draw();
     }
-
 });
 
-
-/* FIRST SCREEN */
-
+resetGrid();
 draw();
 
 </script>
