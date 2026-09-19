@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=240,height=320">
-<title>Snake</title>
+<title>Game Hub</title>
 </head>
 
 <body style="
@@ -16,21 +16,37 @@ font-family:Arial;
 overflow:hidden;
 ">
 
-<div style="text-align:center;padding-top:12px;font-size:20px;font-weight:bold;">
+<div id="title" style="
+text-align:center;
+padding-top:8px;
+font-size:20px;
+font-weight:bold;
+">
 SNAKE
 </div>
 
-<div id="score" style="text-align:center;font-size:12px;margin-top:4px;">
-SCORE: 0
+<div id="score" style="
+text-align:center;
+font-size:11px;
+margin-top:2px;
+">
+SCORE: 0 &nbsp; BEST: 0
 </div>
 
 <canvas id="game"
 width="220"
 height="240"
-style="display:block;margin:10px auto;border:1px solid white;">
+style="
+display:block;
+margin:7px auto;
+border:1px solid white;
+">
 </canvas>
 
-<div id="status" style="text-align:center;font-size:12px;">
+<div id="status" style="
+text-align:center;
+font-size:11px;
+">
 PRESS OK TO START
 </div>
 
@@ -39,12 +55,23 @@ PRESS OK TO START
 var canvas = document.getElementById("game");
 var ctx = canvas.getContext("2d");
 
-var snake;
-var food;
-var direction;
+var snake = [];
+var food = {};
+var direction = "RIGHT";
+var nextDirection = "RIGHT";
+
 var running = false;
 var score = 0;
-var timer;
+var best = 0;
+var speed = 180;
+var timer = null;
+
+var cell = 10;
+var width = 22;
+var height = 24;
+
+
+/* START */
 
 function startGame() {
 
@@ -54,56 +81,115 @@ function startGame() {
         {x:80,y:100}
     ];
 
-    food = {
-        x:140,
-        y:100
-    };
-
     direction = "RIGHT";
+    nextDirection = "RIGHT";
+
     score = 0;
+    speed = 180;
     running = true;
 
-    document.getElementById("score").innerHTML = "SCORE: 0";
-    document.getElementById("status").innerHTML = "USE ARROWS";
+    createFood();
+
+    updateScore();
+
+    document.getElementById("status").innerHTML =
+        "USE ARROWS   BACK EXIT";
 
     clearInterval(timer);
-    timer = setInterval(gameLoop, 180);
+
+    timer = setInterval(gameLoop, speed);
+
+    draw();
 }
+
+
+/* FOOD */
+
+function createFood() {
+
+    var valid = false;
+
+    while (!valid) {
+
+        food.x = Math.floor(Math.random() * width) * cell;
+        food.y = Math.floor(Math.random() * height) * cell;
+
+        valid = true;
+
+        for (var i = 0; i < snake.length; i++) {
+
+            if (
+                snake[i].x == food.x &&
+                snake[i].y == food.y
+            ) {
+                valid = false;
+                break;
+            }
+        }
+    }
+}
+
+
+/* GAME LOOP */
 
 function gameLoop() {
 
+    direction = nextDirection;
+
     var head = {
-        x:snake[0].x,
-        y:snake[0].y
+        x: snake[0].x,
+        y: snake[0].y
     };
 
+
     if (direction == "UP") {
-        head.y -= 10;
+        head.y -= cell;
     }
 
     if (direction == "DOWN") {
-        head.y += 10;
+        head.y += cell;
     }
 
     if (direction == "LEFT") {
-        head.x -= 10;
+        head.x -= cell;
     }
 
     if (direction == "RIGHT") {
-        head.x += 10;
+        head.x += cell;
     }
+
+
+    /* WALL */
 
     if (
         head.x < 0 ||
-        head.x >= 220 ||
+        head.x >= canvas.width ||
         head.y < 0 ||
-        head.y >= 240
+        head.y >= canvas.height
     ) {
         gameOver();
         return;
     }
 
+
+    /* BODY */
+
+    for (var i = 0; i < snake.length; i++) {
+
+        if (
+            head.x == snake[i].x &&
+            head.y == snake[i].y
+        ) {
+            gameOver();
+            return;
+        }
+    }
+
+
     snake.unshift(head);
+
+
+    /* EAT */
 
     if (
         head.x == food.x &&
@@ -112,53 +198,141 @@ function gameLoop() {
 
         score++;
 
-        document.getElementById("score").innerHTML =
-            "SCORE: " + score;
+        if (score > best) {
+            best = score;
+        }
 
-        food.x = Math.floor(Math.random() * 22) * 10;
-        food.y = Math.floor(Math.random() * 24) * 10;
+        updateScore();
+
+        createFood();
+
+        /* SPEED UP */
+
+        if (speed > 70) {
+            speed -= 8;
+
+            clearInterval(timer);
+            timer = setInterval(gameLoop, speed);
+        }
 
     } else {
+
         snake.pop();
+
     }
 
     draw();
 }
 
+
+/* DRAW */
+
 function draw() {
 
     ctx.fillStyle = "black";
-    ctx.fillRect(0,0,220,240);
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* GRID */
+
+    ctx.strokeStyle = "#111";
+
+    for (var x = 0; x <= canvas.width; x += cell) {
+
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,canvas.height);
+        ctx.stroke();
+
+    }
+
+    for (var y = 0; y <= canvas.height; y += cell) {
+
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(canvas.width,y);
+        ctx.stroke();
+
+    }
+
+
+    /* SNAKE */
 
     ctx.fillStyle = "white";
 
     for (var i = 0; i < snake.length; i++) {
+
         ctx.fillRect(
-            snake[i].x,
-            snake[i].y,
-            10,
-            10
+            snake[i].x + 1,
+            snake[i].y + 1,
+            cell - 2,
+            cell - 2
         );
     }
 
+
+    /* HEAD */
+
+    if (snake.length > 0) {
+
+        ctx.fillStyle = "#aaa";
+
+        ctx.fillRect(
+            snake[0].x + 1,
+            snake[0].y + 1,
+            cell - 2,
+            cell - 2
+        );
+    }
+
+
+    /* FOOD */
+
+    ctx.fillStyle = "white";
+
     ctx.fillRect(
-        food.x,
-        food.y,
-        10,
-        10
+        food.x + 2,
+        food.y + 2,
+        cell - 4,
+        cell - 4
     );
 }
+
+
+/* SCORE */
+
+function updateScore() {
+
+    document.getElementById("score").innerHTML =
+        "SCORE: " + score +
+        " &nbsp; BEST: " + best;
+}
+
+
+/* GAME OVER */
 
 function gameOver() {
 
     running = false;
+
     clearInterval(timer);
 
     document.getElementById("status").innerHTML =
-        "GAME OVER - PRESS OK";
+        "GAME OVER &nbsp; OK=RESTART";
 }
 
+
+/* KEYBOARD */
+
 document.addEventListener("keydown", function(e) {
+
+
+    /* OK */
 
     if (e.key == "Enter") {
 
@@ -169,27 +343,67 @@ document.addEventListener("keydown", function(e) {
         return;
     }
 
-    if (!running) {
-        return;
+
+    /* UP */
+
+    if (
+        e.key == "ArrowUp" &&
+        direction != "DOWN"
+    ) {
+        nextDirection = "UP";
     }
 
-    if (e.key == "ArrowUp" && direction != "DOWN") {
-        direction = "UP";
+
+    /* DOWN */
+
+    if (
+        e.key == "ArrowDown" &&
+        direction != "UP"
+    ) {
+        nextDirection = "DOWN";
     }
 
-    if (e.key == "ArrowDown" && direction != "UP") {
-        direction = "DOWN";
+
+    /* LEFT */
+
+    if (
+        e.key == "ArrowLeft" &&
+        direction != "RIGHT"
+    ) {
+        nextDirection = "LEFT";
     }
 
-    if (e.key == "ArrowLeft" && direction != "RIGHT") {
-        direction = "LEFT";
+
+    /* RIGHT */
+
+    if (
+        e.key == "ArrowRight" &&
+        direction != "LEFT"
+    ) {
+        nextDirection = "RIGHT";
     }
 
-    if (e.key == "ArrowRight" && direction != "LEFT") {
-        direction = "RIGHT";
+
+    /* BACK */
+
+    if (
+        e.key == "Escape" ||
+        e.key == "Backspace"
+    ) {
+
+        clearInterval(timer);
+
+        running = false;
+
+        document.getElementById("status").innerHTML =
+            "EXITED - PRESS OK";
+
     }
 
 });
+
+
+/* FIRST SCREEN */
 
 draw();
 
